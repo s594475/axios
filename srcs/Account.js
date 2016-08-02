@@ -43,6 +43,7 @@ class Account extends Component {
         </div>
       );
     }
+
     return (
       <div className='account'>
         <Card className="content">

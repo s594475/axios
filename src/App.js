@@ -1,53 +1,57 @@
-import React , { Component } from 'react';
-import Home from './Home';
-import NavBar from './shared/NavBar';
-import AppBar from 'material-ui/lib/app-bar';
-import AppLeftNav from './shared/AppLeftNav';
-
-
-class App extends Component {
-  constructor(props, context) {
-    super(props, context);
+import React from 'react';
+import getMuiTheme from 'material-ui/styles/getMuiTheme';
+import TextField from 'material-ui/TextField';
+import FlatButton from 'material-ui/FlatButton';
+import Card from 'material-ui/Card';
+import axios from 'axios';
+import UserInfo from './UserInfo';
+import isEmpty from 'lodash/lang/isEmpty';
+class App extends React.Component {
+  getChildContext() {
+    return {muiTheme: getMuiTheme()};
   }
-
-  componentWillMount(){
-    let setNavBarState = function(){
-      this.setState({renderNavBar: document.body.clientWidth > 700});
-    }.bind(this);
-    setNavBarState();
-    window.onresize = setNavBarState;
+  constructor(props) {
+    super(props);
+    this.state = {//设置state的初始值
+      user: {},
+    };
   }
-  render() {
-    return (
-      <div className="app-wrap">
-        {this.state.renderNavBar?<NavBar />:this._getAppBar()}
-        <AppLeftNav ref="leftNav" />
-        {this.props.children}
-        <div className="app-footer">My Footer</div>
+  _handleSubmit(e) {
+    e.preventDefault();//不网页刷新
+    const account = this.refs.account.getValue();//获得输入的值
+    axios.get(`https://api.github.com/users/${account}`)
+         .then((res) => {//异步编程法,监听函数
+           this.setState({user: res.data});//更改state的值
+          });
+  }
+  render () {
+    let GitHubInfo;
+
+    if(!isEmpty(this.state.user)) {
+      GitHubInfo = (
+        <UserInfo userInfo={this.state.user} />
+      );
+    }
+    let styles = {
+      padding: '10px'
+    }
+    return(
+      <div style={styles}>
+        <form onSubmit={this._handleSubmit.bind(this)}>
+          <TextField hintText="Your Github Account"
+                     ref="account"/>
+          <FlatButton label="Search Github"
+                      type="submit"
+                      primary={true}/>
+        </form>
+        { GitHubInfo }
       </div>
-    );
-  }
-
-  _getAppBar() {
-    let title = this.context.router.isActive('/home') ? 'Home' :
-      this.context.router.isActive('/account') ? 'Account' :
-      this.context.router.isActive('/about') ? 'About' : '';
-
-    return (
-      <AppBar title={title}
-              onLeftIconButtonTouchTap={this._onLeftIconButtonTouchTap.bind(this)}/>
-    );
-  }
-
-  _onLeftIconButtonTouchTap() {
-    this.refs.leftNav.handleToggle();
+    )
   }
 }
 
-
-
-App.contextTypes = {
-  router: React.PropTypes.object.isRequired
+App.childContextTypes = {
+  muiTheme: React.PropTypes.object.isRequired,
 };
 
 export default App;
